@@ -1,0 +1,113 @@
+# Instructions taken from takdev-1.2.pdf by @Hayt on Atak Discord
+# All misstakes are my own - @martynp
+#
+# Tested on Ubuntu 20.04 LTS.
+#
+# Prepare os (assuming Virtualbox)
+#
+#  - sudo apt update && apt install build-essential -y
+#  - Insert Guest Additions CD and install
+#  - sudo usermod -aG vboxsf $USER
+#  - reboot
+#
+# Install ansible:
+#
+#  - sudo apt install python3-pip
+#  - python3 -m pip install ansible --user
+#  - echo "export PATH=\$PATH:/home/$USER/.local/bin
+#
+# (Open new terminal, or source ~/.bashrc to continue)
+# 
+# Run playbook:
+#
+#  - ansible-playbook takdev-1.2.yml --ask-become-pass
+#
+# (become password is user password for use in tasks requiring sudo 
+# permissions)
+#
+# Open Android Studio
+#
+#  - ./anroid-studio/bin/studio.sh
+#
+# (Optional) Plugin example:
+#
+#  - Open plugintemplate in android-studio (~/atak/atak-civ/plugin-examples/plugintemplate/) 
+#  - Build will fail cause 4.5.x sdk has an error in the build.gradle, it will open the 
+#    build.gradle when it errors, go up to line 16 and change 'def ' to 'ext.' Click “Try again"
+#  - Click Build->Generate Signed Bundled/APK
+#  - Select APK
+#  - Set your keystore path, password, and alias
+#      - keystore path: /home/{user}/atak/my-release-key.jks
+#      - password: android
+#      - alias: my-alias
+#  - Pick your build type (Build Variant in the bottom left) civDebug/civRelease etc.
+---
+- hosts: localhost
+  tasks:
+  - name: Update app packages
+    become: true
+    become_method: sudo
+    ansible.builtin.apt:
+      name: "*"
+      state: latest
+
+  - name: Install required packages
+    become: true
+    become_method: sudo
+    ansible.builtin.apt:
+      pkg:
+      - build-essential
+      - libc6:i386
+      - libncurses5:i386
+      - lib32stdc++6
+      - lib32z1
+      - libbz2-1.0:i386
+
+  - name: Install OpenJDK
+    become: true
+    become_method: sudo
+    ansible.builtin.apt:
+      pkg:
+      - openjdk-11-jdk
+
+  - name: Get Android Studio 2022.1.1.9
+    ansible.builtin.shell:
+      cmd: cd ~ && wget https://redirector.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz && tar xzf android-studio-2022.1.1.9-linux.tar.gz && rm android-studio-2022.1.1.9-linux.tar.gz
+
+  - name: Get Android NDK r12b
+    ansible.builtin.shell:
+      cmd: mkdir -p ~/Android && cd ~/Android && wget https://dl.google.com/android/repository/android-ndk-r12b-linux-x86_64.zip && unzip android-ndk-r12b-linux-x86_64.zip && rm android-ndk-r12b-linux-x86_64.zip
+
+  - name: Get 4.5.1.13 ATAK SDK
+    ansible.builtin.shell:
+      cmd: mkdir ~/atak && cd ~/atak && wget https://github.com/deptofdefense/AndroidTacticalAssaultKit-CIV/releases/download/4.5.1.13/atak-civ-sdk-4.5.1.13.zip && unzip atak-civ-sdk-4.5.1.13.zip && rm atak-civ-sdk-4.5.1.13.zip
+
+  - name: Get CMAKE 3.14.7
+    ansible.builtin.shell:
+      cmd: cd ~ && wget https://cmake.org/files/v3.14/cmake-3.14.7-Linux-x86_64.tar.gz && tar xvf cmake-3.14.7-Linux-x86_64.tar.gz && rm cmake-3.14.7-Linux-x86_64.tar.gz
+
+  - name: Generate key store
+    ansible.builtin.shell:
+      cmd: cd ~/atak && keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-alias --storepass android --dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"
+      
+  - name: Set properties
+    ansible.builtin.shell:
+      cmd: |
+        cd ~/atak &&
+        touch local.properties &&
+        echo "sdk.dir=/home/$USER/Android/Sdk" >> local.properties &&
+        echo "ndk.dir=/home$USER/Android/android-ndk-r12b" >> local.properties &&
+        echo "cmake.dir=/home/$USER/cmake-3.14.7-Linux-x86_64" >> local.properties &&
+        echo "takDebugKeyAlias=my-alias" >> local.properties &&
+        echo "takReleaseKeyAlias=my-alias" >> local.properties &&
+        echo "takReleaseKeyPassword=android" >> local.properties &&
+        echo "takDebugKeyPassword=android" >> local.properties &&
+        echo "takReleaseKeyFilePassword=android" >> local.properties &&
+        echo "takReleaseKeyFile=my-release-key.jks" >> local.properties &&
+        echo "takDebugKeyFilePassword=android" >> local.properties &&
+        echo "takDebugKeyFile=my-release-key.jks" >> local.properties
+    
+      
+  - name: Link key store and local settings
+    ansible.builtin.shell:
+            cmd: cd ~/atak && ln -s ~/atak/my-release-key.jks ~/atak/atak-civ/plugin-examples/plugintemplate/app && ln -s ~/atak/local.properties ~/atak/atak-civ/plugin-examples/plugintemplate
