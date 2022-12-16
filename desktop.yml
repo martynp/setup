@@ -1,0 +1,17 @@
+- hosts: localhost
+  tasks:
+  - name: Update app packages
+    become: true
+    become_method: sudo
+    ansible.builtin.apt:
+      name: "*"
+      state: latest
+
+  - name: Install required packages
+    become: true
+    become_method: sudo
+    ansible.builtin.apt:
+      pkg:
+      - ubuntu-desktop
+      - tightvncserver
+      - gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal
