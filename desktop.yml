@@ -14,4 +14,8 @@
       pkg:
       - ubuntu-desktop
       - tightvncserver
-      - gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal
+      - gnome-panel
+      - gnome-settings-daemon
+      - metacity
+      - nautilus
+      - gnome-terminal
