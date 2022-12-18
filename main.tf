@@ -3,7 +3,11 @@ provider "aws" {
 }
 
 data "aws_security_group" "common_sg" {
-  id = "sg-03bd1682216cd87ba"
+    id = "sg-03bd1682216cd87ba"
+}
+
+data "aws_subnet" "home_dev_subnet" {
+    id = "subnet-0f1bf0c4888662441"
 }
 
 resource "aws_instance" "dev_machine" {
@@ -13,7 +17,8 @@ resource "aws_instance" "dev_machine" {
     key_name                    = "home_dev_network"
     vpc_security_group_ids      = [data.aws_security_group.common_sg.id]
     associate_public_ip_address = true
-    
+    subnet_id                   = "home_dev_subnet"
+
 
     # root disk
     root_block_device {
