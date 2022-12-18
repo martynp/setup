@@ -15,9 +15,9 @@ resource "aws_instance" "dev_machine" {
     ami                         = "ami-035469b606478d63d"
     instance_type               = "t2.xlarge"
     key_name                    = "home_dev_network"
-    vpc_security_group_ids      = [data.aws_security_group.common_sg.id]
+    vpc_security_group_ids      = "sg-03bd1682216cd87ba"
     associate_public_ip_address = true
-    subnet_id                   = "home_dev_subnet"
+    subnet_id                   = "subnet-0f1bf0c4888662441"
 
 
     # root disk
